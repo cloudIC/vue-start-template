@@ -1,16 +1,29 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { VueLoaderPlugin } = require('vue-loader')
-const { resolveRootPath } = require('./common')
+const { resolveRootPath, getModuleList } = require('./common')
+
+const entry = {
+  vendor: ['vue', resolveRootPath('src/common.js')],
+}
+const htmlPlugins = []
+const moduleList = getModuleList()
+
+moduleList.forEach(folder => {
+  const chunkName = `${folder}/${folder}`
+  entry[chunkName] = resolveRootPath(`src/${folder}/main.js`)
+
+  htmlPlugins.push(new HtmlWebpackPlugin({
+    template: resolveRootPath('src/index.html'),
+    filename: `${folder}/index.html`,
+    chunks: ['runtime', 'vendor', chunkName],
+  }))
+})
 
 module.exports = {
-  entry: [
-    'babel-polyfill',
-    resolveRootPath('src/main.js'),
-  ],
+  entry,
 
   output: {
     path: resolveRootPath('dist'),
-    filename: '[name].[chunkhash:7].js',
     publicPath: '/',
   },
 
@@ -36,18 +49,15 @@ module.exports = {
         test: /\.js$/,
         use: 'babel-loader',
       },
-      {
-        test: /\.css$/,
-        use: [
-          'vue-style-loader',
-          {
-            loader: 'css-loader',
-            options: { importLoaders: 1 },
-          },
-          'postcss-loader',
-        ],
-      }
     ],
+  },
+
+  optimization: {
+    runtimeChunk: 'single',
+    splitChunks: {
+      chunks: 'all',
+      name: 'vendor',
+    },
   },
 
   resolve: {
@@ -59,16 +69,15 @@ module.exports = {
 
   plugins: [
     new VueLoaderPlugin(),
-    new HtmlWebpackPlugin({
-      template: resolveRootPath('public/index.html'),
-      filename: 'index.html',
-    }),
+    ...htmlPlugins,
   ],
 
   stats: {
     modules: false,
     colors: true,
     assets: true,
+    cached: false,
+    cachedAssets: false,
     children: false,
   },
 }

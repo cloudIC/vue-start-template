@@ -1,16 +1,20 @@
 const merge = require('webpack-merge')
-const WebpackCleanupPlugin = require('webpack-cleanup-plugin')
+const CleanWebpackPlugin = require('clean-webpack-plugin')
 const webpackBaseConfig = require('./webpack.base.config')
+const { getCssConfig, resolveRootPath } = require('./common')
 
-module.exports = merge(webpackBaseConfig, {
+module.exports = merge(webpackBaseConfig, getCssConfig(true), {
   mode: 'production',
 
-  optimization: {
-    splitChunks: {
-    },
+  output: {
+    filename: '[name].[chunkhash:8].js',
+    chunkFilename: '[name].[chunkhash:8].js',
   },
 
   plugins: [
-    new WebpackCleanupPlugin(),
+    new CleanWebpackPlugin(['dist'], {
+      root: resolveRootPath(),
+      beforeEmit: true,
+    }),
   ],
 })
